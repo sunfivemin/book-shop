@@ -35,3 +35,8 @@ LEFT JOIN category ON books.category_id = category.id;
 SELECT * FROM books 
 LEFT JOIN category ON books.category_id = category.id
 WHERE books.id = 1;
+
+INSERT INTO likes (user_id, liked_book_id)
+VALUES (1, 1);
+
+DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 1;
