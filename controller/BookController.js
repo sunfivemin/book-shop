@@ -10,7 +10,8 @@ const allBooks = (req, res) => {
   // offset : limit * (currentPage-1)   ex. 0, 3, 6 ...
 
   let offset = limit * (currentPage - 1);
-  let sql = 'SELECT * FROM books';
+  let sql =
+    'SELECT *, (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes FROM books';
   let values = [parseInt(limit), offset];
 
   // 1. 카테고리와 신간 모두 포함된 경우
@@ -45,20 +46,27 @@ const allBooks = (req, res) => {
 
 // 도서 상세 조회 API
 const bookDetail = (req, res) => {
-  const { id } = req.params;
+  const { user_id } = req.query;
+  const book_id = req.params.id;
+
   const sql = `
-    SELECT * FROM books 
-    LEFT JOIN category ON books.category_id = category.id 
-    WHERE books.id = ?`;
+    SELECT *,
+      (SELECT count(*) FROM likes WHERE liked_book_id = books.id) AS likes,
+      (SELECT EXISTS (
+        SELECT * FROM likes 
+        WHERE user_id = ? AND liked_book_id = ?
+      )) AS liked
+    FROM books
+    LEFT JOIN category ON books.category_id = category.category_id
+    WHERE books.id = ?;
+  `;
 
-  conn.query(sql, [id], (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
+  const values = [user_id, book_id, book_id];
 
-    if (results[0]) return res.status(StatusCodes.OK).json(results[0]);
-    else return res.status(StatusCodes.NOT_FOUND).end();
+  conn.query(sql, values, (err, results) => {
+    if (err) return res.status(400).end();
+    if (results[0]) return res.status(200).json(results[0]);
+    return res.status(404).end();
   });
 };
 

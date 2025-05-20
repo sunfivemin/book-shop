@@ -36,7 +36,16 @@ SELECT * FROM books
 LEFT JOIN category ON books.category_id = category.id
 WHERE books.id = 1;
 
-INSERT INTO likes (user_id, liked_book_id)
-VALUES (1, 1);
+INSERT INTO likes (user_id, liked_book_id)VALUES (1, 1);
+INSERT INTO likes (user_id, liked_book_id)VALUES (1, 2);
+INSERT INTO likes (user_id, liked_book_id)VALUES (1, 3);
+INSERT INTO likes (user_id, liked_book_id)VALUES (3, 1);
+INSERT INTO likes (user_id, liked_book_id)VALUES (4, 4);
+INSERT INTO likes (user_id, liked_book_id)VALUES (2, 1);
+INSERT INTO likes (user_id, liked_book_id)VALUES (2, 2);
+INSERT INTO likes (user_id, liked_book_id)VALUES (2, 3);
+INSERT INTO likes (user_id, liked_book_id)VALUES (2, 4);
+
+
 
 DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 1;
