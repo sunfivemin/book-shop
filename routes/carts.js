@@ -10,12 +10,8 @@ router.use(express.json());
 
 router.post('/', addToCart);
 
-router.get('/', getCartItems);
+router.get('/', getCartItems); // 장바구니 아이템 목록 조회 / 선택된 장바구니 아이템 목록 조회
 
 router.delete('/:id', removeCartItem);
-
-// router.get('/cartItems', (req, res) => {
-//   res.json('장바구니에서 선택한 주문 예상상품 목록 조회');
-// });
 
 module.exports = router;
