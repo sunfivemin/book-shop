@@ -54,7 +54,11 @@ DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 1;
 INSERT INTO cartItems (book_id, quantity, user_id) VALUES (1, 1, 1);
 
 
-// 장바구니 조회
+// 장바구니 아이템 목록 조회
 SELECT cartItems.id, book_id, title, summary, quantity, price 
 FROM cartItems LEFT JOIN books 
 ON cartItems.book_id = books.id;
+
+// 장바구니 아이템 삭제
+DELETE FROM cartItems WHERE id = ?;
+
