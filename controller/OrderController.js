@@ -3,9 +3,9 @@ const { StatusCodes } = require('http-status-codes');
 
 // 주문 API
 const order = async (req, res) => {
-  try {
-    const connection = await conn();
+  const connection = await conn();
 
+  try {
     const {
       items, // ex: [{ book_id: 3, quantity: 1 }, { book_id: 4, quantity: 2 }]
       delivery,
@@ -72,7 +72,6 @@ const deleteCartItems = async (connection, userId, items) => {
   const bookIds = items.map((item) => item.book_id);
   if (bookIds.length === 0) return;
 
-  // 해당 사용자의 장바구니 id 목록 조회
   const findCartSql = `SELECT id FROM cartItems WHERE user_id = ? AND book_id IN (?)`;
   const [rows] = await connection.query(findCartSql, [userId, bookIds]);
   const cartItemIds = rows.map((row) => row.id);
@@ -83,13 +82,53 @@ const deleteCartItems = async (connection, userId, items) => {
 };
 
 // 주문 목록
-const getOrders = (req, res) => {
-  res.send('전체 주문 목록');
+const getOrders = async (req, res) => {
+  const connection = await conn();
+
+  const sql = `
+    SELECT 
+      orders.id,
+      created_at,
+      address,
+      receiver,
+      contact,
+      book_title,
+      total_quantity,
+      total_price
+    FROM orders
+    LEFT JOIN delivery
+    ON orders.delivery_id = delivery.id;
+  `;
+  const [rows] = await connection.query(sql);
+  return res.status(StatusCodes.OK).json(rows);
 };
 
 // 주문 상세
-const getOrderDetail = (req, res) => {
-  res.send('주문 상세');
+const getOrderDetail = async (req, res) => {
+  const { id } = req.params;
+  const connection = await conn();
+
+  const sql = `
+  SELECT 
+    orderedBook.book_id,
+    books.title,
+    books.author,
+    books.price,
+    orderedBook.quantity
+  FROM orderedBook
+  LEFT JOIN books ON orderedBook.book_id = books.id
+  WHERE orderedBook.order_id = ?
+`;
+
+  try {
+    const [rows] = await connection.query(sql, [id]);
+    return res.status(StatusCodes.OK).json(rows);
+  } catch (err) {
+    console.error('상세 주문 조회 실패:', err);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: '상세 주문 조회 실패',
+    });
+  }
 };
 
 module.exports = {

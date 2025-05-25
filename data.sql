@@ -85,3 +85,16 @@ SELECT max(id) FROM Bookshop.orderedBook;
 
 // 결제된 도서 장바구니 삭제 
 DELETE FROM cartItems WHERE id IN (1,2,3);
+
+// 주문 내역 조회
+SELECT 
+  orders.id, 
+  book_title, 
+  total_quantity, 
+  total_price, 
+  created_at, 
+  address, 
+  receiver, 
+  contact
+FROM orders
+LEFT JOIN delivery ON orders.delivery_id = delivery.id;
