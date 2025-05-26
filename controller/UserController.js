@@ -5,113 +5,109 @@ const crypto = require('crypto');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const join = (req, res) => {
+const join = async (req, res) => {
   const { email, password } = req.body;
+  const connection = await conn(); // ✅ 커넥션 받아오기
 
-  // 회원가입시 암호화된 비말번호와 salt값을 같이 DB에 저장
   const salt = crypto.randomBytes(64).toString('base64');
   const hashPassword = crypto
     .pbkdf2Sync(password, salt, 10000, 64, 'sha512')
     .toString('base64');
 
-  let sql = 'INSERT INTO users (email, password, salt) VALUES (?, ?, ?)';
-  let values = [email, hashPassword, salt];
+  const sql = 'INSERT INTO users (email, password, salt) VALUES (?, ?, ?)';
+  const values = [email, hashPassword, salt];
 
-  conn.query(sql, values, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-    return res.status(StatusCodes.CREATED).json(results);
-  });
+  try {
+    const [result] = await connection.execute(sql, values); // ✅ execute로 변경
+    return res.status(StatusCodes.CREATED).json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
-const login = (req, res) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
+  const connection = await conn(); // ✅ 커넥션 객체 받아오기
 
-  let sql = 'SELECT * FROM users WHERE email = ?';
-  conn.query(sql, email, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
+  const sql = 'SELECT * FROM users WHERE email = ?';
+  try {
+    const [results] = await connection.query(sql, [email]); // ✅ await query
 
     const loginUser = results[0];
 
-    // salt값 꺼내서 날 것으로 들어온 비밀번호를 암호화 해보고
+    if (!loginUser) return res.status(StatusCodes.UNAUTHORIZED).end();
+
     const hashPassword = crypto
       .pbkdf2Sync(password, loginUser.salt, 10000, 64, 'sha512')
       .toString('base64');
 
-    // 디비 비밀번호랑 비교
-    if (loginUser && loginUser.password == hashPassword) {
-      // token 발행
-      const token = jwt.sign(
-        {
-          email: loginUser.email,
-        },
-        process.env.PRIVATE_KEY,
-        {
-          expiresIn: '5m',
-          issuer: 'songa',
-        }
-      );
-
-      // token 쿠키에 담기
-      res.cookie('token', token, {
-        httpOnly: true,
-      });
-
-      console.log(token);
-
-      return res.status(StatusCodes.OK).json(results);
-    } else {
+    if (loginUser.password !== hashPassword)
       return res.status(StatusCodes.UNAUTHORIZED).end();
-    }
-  });
+
+    const token = jwt.sign(
+      {
+        id: loginUser.id,
+        email: loginUser.email,
+      },
+      process.env.PRIVATE_KEY,
+      {
+        expiresIn: '5m',
+        issuer: 'songa',
+      }
+    );
+
+    res.cookie('token', token, { httpOnly: true });
+
+    return res.status(StatusCodes.OK).json({ message: '로그인 성공', token });
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
-const passwordResetRequest = (req, res) => {
+const passwordResetRequest = async (req, res) => {
   const { email } = req.body;
+  const connection = await conn();
 
-  let sql = 'SELECT * FROM users WHERE email = ?';
-  conn.query(sql, email, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
+  const sql = 'SELECT * FROM users WHERE email = ?';
 
+  try {
+    const [results] = await connection.query(sql, [email]);
     const user = results[0];
+
     if (user) {
-      return res.status(StatusCodes.OK).json({
-        email: email,
-      });
+      return res.status(StatusCodes.OK).json({ email });
     } else {
       return res.status(StatusCodes.UNAUTHORIZED).end();
     }
-  });
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
-const passwordReset = (req, res) => {
+const passwordReset = async (req, res) => {
   const { email, password } = req.body;
-
-  let sql = 'UPDATE users SET password=?, salt=? WHERE email = ?';
+  const connection = await conn();
 
   const salt = crypto.randomBytes(64).toString('base64');
   const hashPassword = crypto
     .pbkdf2Sync(password, salt, 10000, 64, 'sha512')
     .toString('base64');
 
-  let values = [hashPassword, salt, email];
-  conn.query(sql, values, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-    if (results.affectedRows == 0)
+  const sql = 'UPDATE users SET password=?, salt=? WHERE email = ?';
+  const values = [hashPassword, salt, email];
+
+  try {
+    const [results] = await connection.execute(sql, values);
+    if (results.affectedRows === 0)
       return res.status(StatusCodes.BAD_REQUEST).end();
     else return res.status(StatusCodes.CREATED).json(results);
-  });
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
 module.exports = {

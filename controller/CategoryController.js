@@ -1,16 +1,15 @@
 const conn = require('../mariadb');
 const { StatusCodes } = require('http-status-codes');
 
-const allCategory = (req, res) => {
-  // 카테고리 전체 목록 리스트
-  let sql = 'SELECT * FROM category';
-  conn.query(sql, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-    return res.status(StatusCodes.OK).json(results);
-  });
+const allCategory = async (req, res) => {
+  try {
+    const connection = await conn(); // ✅ 연결 객체 받아오기
+    const [rows] = await connection.query('SELECT * FROM category'); // ✅ query 호출
+    return res.status(StatusCodes.OK).json(rows);
+  } catch (err) {
+    console.error(err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
 module.exports = {
