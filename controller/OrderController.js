@@ -1,8 +1,29 @@
 const conn = require('../mariadb');
 const { StatusCodes } = require('http-status-codes');
+const ensureAuthorization = require('../auth');
+const jwt = require('jsonwebtoken');
 
 // 주문 API
 const order = async (req, res) => {
+  const user = ensureAuthorization(req);
+
+  // 인증 에러 처리
+  if (user instanceof jwt.TokenExpiredError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '세션이 만료되었습니다. 다시 로그인 해주세요.',
+    });
+  }
+  if (user instanceof jwt.JsonWebTokenError) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: '유효하지 않은 토큰입니다.',
+    });
+  }
+  if (user instanceof Error) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: user.message,
+    });
+  }
+
   const connection = await conn();
 
   try {
@@ -11,7 +32,6 @@ const order = async (req, res) => {
       delivery,
       totalQuantity,
       totalPrice,
-      userId,
       firstBookTitle,
     } = req.body;
 
@@ -36,7 +56,7 @@ const order = async (req, res) => {
       firstBookTitle,
       totalQuantity,
       totalPrice,
-      userId,
+      user.id,
       delivery_id,
     ];
     const [orderResults] = await connection.execute(orderSql, orderValues);
@@ -44,7 +64,7 @@ const order = async (req, res) => {
 
     // 3. 주문 상세 INSERT (orderedBook)
     const orderedBookSql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`;
-    const orderedBookValues = items.map((item) => [
+    const orderedBookValues = items.map(item => [
       order_id,
       item.book_id,
       item.quantity,
@@ -52,7 +72,7 @@ const order = async (req, res) => {
     await connection.query(orderedBookSql, [orderedBookValues]);
 
     // 4. 장바구니 삭제
-    await deleteCartItems(connection, userId, items);
+    await deleteCartItems(connection, user.id, items);
 
     return res.status(StatusCodes.OK).json({
       success: true,
@@ -69,12 +89,12 @@ const order = async (req, res) => {
 
 // 장바구니 삭제 함수
 const deleteCartItems = async (connection, userId, items) => {
-  const bookIds = items.map((item) => item.book_id);
+  const bookIds = items.map(item => item.book_id);
   if (bookIds.length === 0) return;
 
   const findCartSql = `SELECT id FROM cartItems WHERE user_id = ? AND book_id IN (?)`;
   const [rows] = await connection.query(findCartSql, [userId, bookIds]);
-  const cartItemIds = rows.map((row) => row.id);
+  const cartItemIds = rows.map(row => row.id);
   if (cartItemIds.length === 0) return;
 
   const deleteSql = `DELETE FROM cartItems WHERE id IN (?)`;
