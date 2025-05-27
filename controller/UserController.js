@@ -7,7 +7,7 @@ dotenv.config();
 
 const join = async (req, res) => {
   const { email, password } = req.body;
-  const connection = await conn(); // ✅ 커넥션 받아오기
+  const connection = await conn(); // 커넥션 받아오기
 
   const salt = crypto.randomBytes(64).toString('base64');
   const hashPassword = crypto
@@ -18,7 +18,7 @@ const join = async (req, res) => {
   const values = [email, hashPassword, salt];
 
   try {
-    const [result] = await connection.execute(sql, values); // ✅ execute로 변경
+    const [result] = await connection.execute(sql, values); // execute로 변경
     return res.status(StatusCodes.CREATED).json(result);
   } catch (err) {
     console.error(err);
@@ -28,40 +28,40 @@ const join = async (req, res) => {
 
 const login = async (req, res) => {
   const { email, password } = req.body;
-  const connection = await conn(); // ✅ 커넥션 객체 받아오기
+  const connection = await conn();
 
   const sql = 'SELECT * FROM users WHERE email = ?';
   try {
-    const [results] = await connection.query(sql, [email]); // ✅ await query
+    const [results] = await connection.query(sql, [email]);
 
     const loginUser = results[0];
-
-    if (!loginUser) return res.status(StatusCodes.UNAUTHORIZED).end();
+    if (!loginUser) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: '존재하지 않는 사용자입니다.' });
+    }
 
     const hashPassword = crypto
       .pbkdf2Sync(password, loginUser.salt, 10000, 64, 'sha512')
       .toString('base64');
 
-    if (loginUser.password !== hashPassword)
-      return res.status(StatusCodes.UNAUTHORIZED).end();
+    if (loginUser.password !== hashPassword) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: '비밀번호가 일치하지 않습니다.' });
+    }
 
     const token = jwt.sign(
-      {
-        id: loginUser.id,
-        email: loginUser.email,
-      },
+      { id: loginUser.id, email: loginUser.email },
       process.env.PRIVATE_KEY,
-      {
-        expiresIn: '5m',
-        issuer: 'songa',
-      }
+      { expiresIn: '5m', issuer: 'songa' }
     );
 
     res.cookie('token', token, { httpOnly: true });
 
     return res.status(StatusCodes.OK).json({ message: '로그인 성공', token });
   } catch (err) {
-    console.error(err);
+    console.error('login 에러:', err);
     return res.status(StatusCodes.BAD_REQUEST).end();
   }
 };
