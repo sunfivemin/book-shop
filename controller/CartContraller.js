@@ -94,8 +94,31 @@ const removeCartItem = async (req, res) => {
   }
 };
 
+// 장바구니 전체 조회
+const getAllCartItems = async (req, res) => {
+  const auth = ensureAuthorization(req);
+  const error = handleAuthError(auth, res);
+  if (error) return error;
+
+  try {
+    const connection = await conn();
+    const sql = `
+      SELECT cartItems.id, book_id, title, summary, quantity, price
+      FROM cartItems
+      LEFT JOIN books ON cartItems.book_id = books.id
+      WHERE user_id = ?
+    `;
+    const [results] = await connection.execute(sql, [auth.id]);
+    return res.status(StatusCodes.OK).json(results);
+  } catch (err) {
+    console.error('getAllCartItems 에러:', err);
+    return res.status(StatusCodes.BAD_REQUEST).end();
+  }
+};
+
 module.exports = {
   addToCart,
   getCartItems,
   removeCartItem,
+  getAllCartItems,
 };
