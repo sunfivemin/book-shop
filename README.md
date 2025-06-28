@@ -49,7 +49,7 @@ JWT 기반 인증, 카테고리별 도서 조회, 장바구니, 좋아요, 주�
 
 ## 🚀 실행 방법
 
-1. `.env` 파일 생성:
+#### 1. `.env` 파일 생성:
 
 ```env
 PORT=9999
@@ -61,13 +61,13 @@ DB_DATABASE=bookshop
 JWT_SECRET=your_jwt_secret
 ```
 
-2. 의존성 설치:
+#### 2. 의존성 설치:
 
 ```env
 npm install
 ```
 
-3. 서버 실행:
+#### 3. 서버 실행:
 
 ```env
 npx nodemon app.js
@@ -75,16 +75,16 @@ npx nodemon app.js
 
 ⸻
 
-📡 API 예시
+## 📡 API 예시
 
-📚 도서 목록 조회
+#### 📚 도서 목록 조회
 
 ```http
 GET /books
 GET /books?category_id=1&page=2
 ```
 
-🛒 장바구니
+#### 🛒 장바구니
 
 ```http
 POST   /carts        // 장바구니에 추가
@@ -92,14 +92,14 @@ GET    /carts        // 장바구니 조회
 DELETE /carts/:id    // 장바구니 항목 삭제
 ```
 
-🧾 주문
+#### 🧾 주문
 
 ```http
 POST /orders
 GET  /orders         // 주문 내역 조회
 ```
 
-❤️ 좋아요
+#### ❤️ 좋아요
 
 ```http
 POST   /likes
@@ -108,8 +108,9 @@ DELETE /likes/:id
 
 ⸻
 
-🧩 프론트엔드 연결
-• 프론트엔드 저장소: sunfivemin/book-store
-• React + TypeScript 기반
-• Tailwind CSS + Vanilla Extract 스타일 시스템
-• 도서 목록, 카테고리, 장바구니 연동됨
+## 🧩 프론트엔드 연결
+
+- 프론트엔드 저장소: sunfivemin/book-store
+- React + TypeScript 기반
+- Tailwind CSS + Vanilla Extract 스타일 시스템
+- 도서 목록, 카테고리, 장바구니 연동
