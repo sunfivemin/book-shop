@@ -5,8 +5,11 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: 'http://localhost:5173', // 또는 '*' (모든 도메인 허용)
-    credentials: true, // 쿠키 포함 시 true로
+    origin: [
+      'http://localhost:5173', // 개발용
+      'https://book-store-axnmihs3k-sunfivemins-projects.vercel.app/', // Vercel 배포 주소
+    ],
+    credentials: true,
   })
 );
 const dotenv = require('dotenv');
