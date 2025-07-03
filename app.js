@@ -7,7 +7,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173', // 개발용
-      'https://book-store-axnmihs3k-sunfivemins-projects.vercel.app/', // Vercel 배포 주소
+      'https://book-store-three-tau-70.vercel.app/', // Vercel 배포 주소
     ],
     credentials: true,
   })
