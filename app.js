@@ -3,15 +3,24 @@ const app = express();
 const cors = require('cors');
 app.use(express.json());
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://book-store-three-tau-70.vercel.app',
+];
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173', // 개발용
-      'https://book-store-three-tau-70.vercel.app', // Vercel 배포 주소
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
+
 const dotenv = require('dotenv');
 dotenv.config();
 
